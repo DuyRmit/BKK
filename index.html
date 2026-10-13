@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bangkok 15–19/10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f7f5;
+    --surface: #ffffff;
+    --ink: #14231f;
+    --muted: #5b6b66;
+    --line: #d5e0db;
+    --pink: #e6397d;
+    --pink-soft: #fde6ef;
+    --lime: #e4f06a;
+    --ok: #1f8a5b;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1a17; --surface: #16251f; --ink: #eaf3ef; --muted: #98aaa3;
+      --line: #284038; --pink: #ff5c9a; --pink-soft: #3a1a29; --lime: #d9e85a; --ok: #4fd18f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1a17; --surface: #16251f; --ink: #eaf3ef; --muted: #98aaa3;
+    --line: #284038; --pink: #ff5c9a; --pink-soft: #3a1a29; --lime: #d9e85a; --ok: #4fd18f;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: var(--safe-top); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+    padding: var(--safe-top) 0 var(--safe-bottom);
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 96px; }
+
+  header h1 {
+    font-size: clamp(2rem, 7vw, 3rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 8px 0 6px;
+  }
+  header h1 span { background: var(--lime); color: #14231f; padding: 0 .2em; border-radius: 4px; }
+  header p { margin: 0; color: var(--muted); }
+
+  .bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0 20px; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: .875rem; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--ok); }
+  .dot.local { background: #d99a1d; }
+  .dot.err { background: var(--pink); }
+  button {
+    font: inherit; cursor: pointer; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 8px 14px; min-height: 40px;
+  }
+  button:hover { border-color: var(--pink); }
+  button.primary { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 700; }
+  :focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; }
+  .tab { white-space: nowrap; flex: 0 0 auto; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 700; }
+
+  .day-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 12px; }
+
+  .stops { list-style: none; margin: 0; padding: 0; border-left: 3px solid var(--line); }
+  .stop {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    gap: 4px 12px;
+    padding: 12px 0 12px 16px;
+    position: relative;
+  }
+  .stop::before {
+    content: ""; position: absolute; left: -9px; top: 20px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--surface); border: 3px solid var(--pink);
+  }
+  .stop.done::before { background: var(--ok); border-color: var(--ok); }
+  .stop.done .name { text-decoration: line-through; color: var(--muted); }
+  .stop input[type="text"] {
+    font: inherit; color: inherit; background: transparent;
+    border: 1px solid transparent; border-radius: 6px;
+    padding: 4px 6px; width: 100%; min-width: 0;
+  }
+  .stop input[type="text"]:hover { border-color: var(--line); }
+  .stop input[type="text"]:focus { border-color: var(--pink); background: var(--surface); outline: none; }
+  .time { font-weight: 700; color: var(--pink); }
+  .name { font-weight: 700; }
+  .note { color: var(--muted); font-size: .9rem; grid-column: 2 / 3; }
+  .actions { grid-row: 1 / 3; grid-column: 3; display: flex; align-items: flex-start; gap: 6px; }
+  .actions button { padding: 4px 10px; min-height: 36px; }
+  .check { width: 22px; height: 22px; accent-color: var(--ok); margin-top: 6px; cursor: pointer; }
+  .empty { color: var(--muted); padding: 16px 0 16px 16px; }
+
+  .add { margin-top: 12px; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + var(--safe-bottom));
+    transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 8px; font-size: .9rem;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+
+  .setup {
+    margin-top: 32px; padding: 16px; border: 1px dashed var(--line);
+    border-radius: 8px; color: var(--muted); font-size: .9rem;
+  }
+  .setup[hidden] { display: none; }
+  .setup code { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 480px) {
+    .stop { grid-template-columns: 64px 1fr; }
+    .actions { grid-column: 2; grid-row: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Bangkok <span>15–19/10</span></h1>
+    <p>Lịch trình ăn uống và mua sắm. Ai sửa, người kia thấy ngay.</p>
+  </header>
+
+  <div class="bar">
+    <span class="status" role="status" aria-live="polite"><span class="dot" id="dot"></span><span id="statusText">Đang kết nối…</span></span>
+    <button class="primary" id="shareBtn" type="button">Sao chép link chia sẻ</button>
+  </div>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Chọn ngày"></div>
+  <h2 class="day-title" id="dayTitle"></h2>
+  <ul class="stops" id="stops"></ul>
+  <button class="add" id="addBtn" type="button">Thêm địa điểm</button>
+
+  <section class="setup" id="setup" hidden>
+    Đang chạy chế độ máy cục bộ: dữ liệu chỉ lưu trên thiết bị này. Để đồng bộ giữa nhiều người,
+    dán địa chỉ Cloudflare Worker vào biến <code>WORKER_URL</code> trong file <code>index.html</code>.
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* ============ CẤU HÌNH ============
+   Dán địa chỉ Cloudflare Worker (D1) sau khi deploy, ví dụ:
+   https://bkk-trip.ten-cua-ban.workers.dev
+   Để trống thì trang chạy ở chế độ cục bộ (không đồng bộ). */
+const WORKER_URL = "";
+
+/* ============ DỮ LIỆU MẶC ĐỊNH ============ */
+const SEED = [
+  { label: "T5 15/10", title: "Thứ Năm 15/10: Hạ cánh và dạo Asok", stops: [
+    ["14:00", "Hạ cánh Suvarnabhumi", "Nhập cảnh, mua SIM/eSIM, đi Grab hoặc Airport Link + BTS."],
+    ["16:30", "Nhận phòng Eleven Sukhumvit", "Nghỉ ngơi, tắm rửa."],
+    ["18:00", "Terminal 21 (Asok)", "Dạo mall theo chủ đề các thành phố."],
+    ["19:00", "Pier 21 Food Court", "Ăn tối giá rẻ: mì, cơm gà, xôi xoài. Nạp thẻ rồi dùng."],
+    ["20:30", "Massage Thái", "Thả lỏng sau chuyến bay."]
+  ]},
+  { label: "T6 16/10", title: "Thứ Sáu 16/10: Tennis và khu Siam", stops: [
+    ["08:30", "Ăn sáng gần khách sạn", "Cháo, dim sum, cà phê quanh Soi 11."],
+    ["10:30", "Gourmet Market, Emquartier", "Xem trước đồ mua làm quà: trà Thái, xoài sấy."],
+    ["12:00", "Ăn trưa nhẹ", "Ăn sớm, ít dầu mỡ trước khi đánh tennis."],
+    ["13:00", "Tennis tại Serve and Social", "13:00–15:00. Tới sớm 15 phút."],
+    ["16:30", "Siam Paragon", "Paragon, Siam Discovery, Siam Center."],
+    ["19:00", "Ăn tối khu Siam", "Paragon Food Hall hoặc quán quanh Siam Square."],
+    ["20:30", "MBK Center", "Đồ lưu niệm, ốp điện thoại. Nhớ mặc cả."]
+  ]},
+  { label: "T7 17/10", title: "Thứ Bảy 17/10: Chatuchak và Chinatown", stops: [
+    ["09:30", "Chợ Chatuchak", "Chợ cuối tuần. Đi sớm cho đỡ nóng."],
+    ["12:30", "Ăn trưa trong chợ", "Trà Thái, dừa nướng, mì thuyền, xôi xoài."],
+    ["14:00", "Or Tor Kor Market", "Trái cây, thực phẩm sạch, đồ quà."],
+    ["15:30", "Nghỉ ở khách sạn", ""],
+    ["18:30", "Yaowarat (Chinatown)", "Ẩm thực đường phố, sôi động nhất sau 18:00."]
+  ]},
+  { label: "CN 18/10", title: "Chủ Nhật 18/10: Phố cổ, ICONSIAM, Thong Lor", stops: [
+    ["10:00", "Thipsamai Pad Thai", "Kiểm tra giờ mở cửa. Có thể đông."],
+    ["11:30", "Khu phố cổ / sông Chao Phraya", "Đi tàu sông đến ICONSIAM."],
+    ["13:00", "ICONSIAM", "Ăn trưa ở Sook Siam."],
+    ["14:30", "Mua sắm tiếp ở ICONSIAM", "Thương hiệu quốc tế, designer Thái."],
+    ["18:00", "Thong Lor / Ekkamai", "Cà phê, nhà hàng, rooftop. Ăn tối ở đây."],
+    ["20:30", "Soi 38 Night Market", "Ăn khuya nhẹ."]
+  ]},
+  { label: "T2 19/10", title: "Thứ Hai 19/10: Mua nốt quà và ra sân bay", stops: [
+    ["08:30", "Ăn sáng và trả phòng", "Gửi hành lý lại khách sạn nếu cần."],
+    ["10:00", "Terminal 21 / Emquartier", "Mua nốt quà. Kiểm tra quy định hành lý và chất lỏng."],
+    ["12:30", "Ăn trưa cuối", "Chọn món thích nhất trong chuyến đi."],
+    ["14:30", "Về khách sạn lấy hành lý", "Kiểm tra hộ chiếu, vé máy bay."],
+    ["15:30", "Ra sân bay Suvarnabhumi", "Tới sân bay 16:30–17:00 cho chuyến bay 19:30."]
+  ]}
+];
+
+function buildSeed() {
+  const days = {};
+  SEED.forEach((d, i) => {
+    const stops = {};
+    d.stops.forEach(([time, name, note], j) => {
+      stops["s" + String(j).padStart(2, "0") + i] = { time, name, note, done: false };
+    });
+    days["d" + i] = { label: d.label, title: d.title, stops };
+  });
+  return { days };
+}
+
+/* ============ TẦNG LƯU TRỮ ============ */
+const params = new URLSearchParams(location.search);
+let tripId = params.get("trip");
+if (!tripId) {
+  tripId = Math.random().toString(36).slice(2, 10);
+  params.set("trip", tripId);
+  history.replaceState(null, "", location.pathname + "?" + params.toString());
+}
+
+let state = null;
+let store;
+
+function getPath(obj, parts) { return parts.reduce((o, k) => (o ? o[k] : undefined), obj); }
+function setLocalPath(obj, parts, value) {
+  let o = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!o[parts[i]]) o[parts[i]] = {};
+    o = o[parts[i]];
+  }
+  const last = parts[parts.length - 1];
+  if (value === null) delete o[last]; else o[last] = value;
+}
+
+function initStore() {
+  if (WORKER_URL) { connectWS(); return; }
+
+  // chế độ cục bộ
+  const key = "bkk-trip-" + tripId;
+  try { state = JSON.parse(localStorage.getItem(key)); } catch (e) { state = null; }
+  if (!state) state = buildSeed();
+  store = {
+    write(path, value) {
+      setLocalPath(state, path.split("/"), value);
+      try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {}
+      scheduleRender();
+      return Promise.resolve();
+    }
+  };
+  setStatus("local", "Chế độ cục bộ (chưa đồng bộ)");
+  $("setup").hidden = false;
+  scheduleRender();
+}
+
+function connectWS() { connectPoll(); }
+
+function connectPoll() {
+  const base = WORKER_URL.replace(/\/$/, "");
+  const q = "trip=" + encodeURIComponent(tripId);
+  let maxVer = 0;      // mốc thời gian lớn nhất đã thấy
+  let inflight = 0;    // số lần ghi đang chờ
+  let epoch = 0;       // tăng sau mỗi lần ghi xong
+  let timer = null;
+
+  async function post(body) {
+    const res = await fetch(base + "/api/write?" + q, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  store = {
+    write(path, value) {
+      if (!state) return Promise.resolve();
+      const parts = path.split("/");
+      setLocalPath(state, parts, value);
+      // Mỗi địa điểm lưu thành một dòng: days/dX/stops/sid
+      const stopParts = parts.slice(0, 4);
+      const obj = getPath(state, stopParts);
+      const row = { k: stopParts.join("/"), v: obj === undefined ? null : JSON.stringify(obj) };
+      scheduleRender();
+      inflight++;
+      return post({ rows: [row] })
+        .catch(() => { toast("Chưa lưu được, đang đồng bộ lại"); maxVer = 0; })
+        .finally(() => { inflight--; epoch++; });
+    }
+  };
+
+  // Trả về true nếu có dòng nào thực sự thay đổi
+  function applyRows(rows) {
+    if (!state) state = { days: {} };
+    let changed = false;
+    for (const r of rows) {
+      const parts = r.k.split("/");
+      const cur = getPath(state, parts);
+      const curStr = cur === undefined ? null : JSON.stringify(cur);
+      if (curStr !== r.v) {
+        setLocalPath(state, parts, r.v === null ? null : JSON.parse(r.v));
+        changed = true;
+      }
+      if (r.ver > maxVer) maxVer = r.ver;
+    }
+    return changed;
+  }
+
+  async function seed() {
+    state = buildSeed();
+    const rows = [];
+    for (const [d, day] of Object.entries(state.days)) {
+      rows.push({ k: `days/${d}/label`, v: JSON.stringify(day.label) });
+      rows.push({ k: `days/${d}/title`, v: JSON.stringify(day.title) });
+      for (const [sid, st] of Object.entries(day.stops)) {
+        rows.push({ k: `days/${d}/stops/${sid}`, v: JSON.stringify(st) });
+      }
+    }
+    await post({ seed: true, rows });
+    maxVer = 0; // lần poll tới lấy lại bản chính thức
+    scheduleRender();
+  }
+
+  async function poll() {
+    const e = epoch;
+    try {
+      // lùi 5 giây để không bỏ sót dòng ghi gần đồng thời
+      const since = Math.max(0, maxVer - 5000);
+      const res = await fetch(`${base}/api/sync?${q}&since=${since}`);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const { rows } = await res.json();
+      if (inflight === 0 && e === epoch) {
+        if (state === null && rows.length === 0) await seed();
+        else if (applyRows(rows)) scheduleRender();
+        setStatus("live", "Đồng bộ tự động (vài giây/lần)");
+      }
+    } catch (err) {
+      setStatus("err", "Mất kết nối, đang thử lại…");
+    }
+    timer = setTimeout(poll, document.hidden ? 8000 : 2500);
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) { clearTimeout(timer); poll(); }
+  });
+  setStatus("local", "Đang kết nối…");
+  poll();
+}
+
+/* ============ GIAO DIỆN ============ */
+const $ = id => document.getElementById(id);
+let currentDay = "d0";
+let renderPending = false;
+
+function setStatus(kind, text) {
+  $("dot").className = "dot " + kind;
+  $("statusText").textContent = text;
+}
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+function scheduleRender() {
+  // Không vẽ lại khi người dùng đang gõ, để không mất con trỏ
+  const a = document.activeElement;
+  if (a && a.tagName === "INPUT" && a.type === "text") { renderPending = true; return; }
+  render();
+}
+document.addEventListener("focusout", () => {
+  if (renderPending) { renderPending = false; setTimeout(render, 0); }
+});
+
+function render() {
+  if (!state || !state.days) return;
+  const dayIds = Object.keys(state.days).sort();
+  if (!state.days[currentDay]) currentDay = dayIds[0];
+
+  const tabs = $("tabs");
+  tabs.innerHTML = "";
+  dayIds.forEach(id => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tab"; b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", id === currentDay);
+    b.textContent = state.days[id].label;
+    b.onclick = () => { currentDay = id; render(); };
+    tabs.appendChild(b);
+  });
+
+  const day = state.days[currentDay];
+  $("dayTitle").textContent = day.title || day.label;
+
+  const list = $("stops");
+  list.innerHTML = "";
+  const stops = Object.entries(day.stops || {})
+    .sort((a, b) => (a[1].time || "").localeCompare(b[1].time || "") || a[0].localeCompare(b[0]));
+
+  if (!stops.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "Chưa có địa điểm nào. Bấm “Thêm địa điểm” để bắt đầu.";
+    list.appendChild(li);
+  }
+
+  stops.forEach(([sid, s]) => {
+    const base = `days/${currentDay}/stops/${sid}`;
+    const li = document.createElement("li");
+    li.className = "stop" + (s.done ? " done" : "");
+
+    const time = field("time", s.time, "Giờ", v => store.write(base + "/time", v));
+    const name = field("name", s.name, "Tên địa điểm", v => store.write(base + "/name", v));
+    const note = field("note", s.note, "Ghi chú", v => store.write(base + "/note", v));
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.className = "check"; cb.checked = !!s.done;
+    cb.setAttribute("aria-label", "Đã xong: " + (s.name || ""));
+    cb.onchange = () => store.write(base + "/done", cb.checked);
+    const del = document.createElement("button");
+    del.type = "button"; del.textContent = "Xóa";
+    del.setAttribute("aria-label", "Xóa " + (s.name || "địa điểm"));
+    del.onclick = () => { if (confirm("Xóa “" + (s.name || "địa điểm này") + "”?")) store.write(base, null); };
+    actions.append(cb, del);
+
+    li.append(time, name, actions, note);
+    list.appendChild(li);
+  });
+}
+
+function field(cls, value, label, onCommit) {
+  const i = document.createElement("input");
+  i.type = "text"; i.className = cls; i.value = value || "";
+  i.setAttribute("aria-label", label); i.placeholder = label;
+  i.onchange = () => onCommit(i.value.trim());
+  i.onkeydown = e => { if (e.key === "Enter") i.blur(); };
+  return i;
+}
+
+$("addBtn").onclick = () => {
+  const id = "s" + Date.now().toString(36);
+  store.write(`days/${currentDay}/stops/${id}`, { time: "12:00", name: "Địa điểm mới", note: "", done: false });
+};
+
+$("shareBtn").onclick = async () => {
+  const url = location.href;
+  try {
+    if (navigator.share) { await navigator.share({ title: "Lịch trình Bangkok", url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast("Đã sao chép link");
+  } catch (e) {
+    prompt("Sao chép link này:", url);
+  }
+};
+
+initStore();
+</script>
+</body>
+</html>
